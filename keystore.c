@@ -61,12 +61,17 @@ int kv_store_write(char *key, char *value) {
         return -1;
     }
     
+    char key_s[32];
+    
+    strncpy(key_s, key, 32);
+    key_s[31] = '\0';
+    
 
-    int index = hash_function(key);
+    int index = hash_function(key_s);
     char *pod_addr = store_addr + (index * POD_SIZE);
     
     // Write key
-    memcpy(pod_addr, key, KEY_SIZE);
+    memcpy(pod_addr, key_s, KEY_SIZE);
     
     // Write value
     memcpy(pod_addr + KEY_SIZE, value, VALUE_SIZE);
@@ -84,7 +89,12 @@ char *kv_store_read(char *key) {
         return NULL;
     }
     
-    int index = hash_function(key);
+    char key_s[32];
+    
+    strncpy(key_s, key, 32);
+    key_s[31] = '\0';
+    
+    int index = hash_function(key_s);
     char *pod_addr = store_addr + (index * POD_SIZE);
     
     char *value = (void*)calloc(sizeof(char), VALUE_SIZE);
