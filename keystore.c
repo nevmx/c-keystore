@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <semaphore.h>
 
 /*
     256 pods. each pod 8 units deep
@@ -24,10 +25,24 @@
 
 char *store_addr = NULL;
 int kv_store_created = 0;
+sem_t *keystore_semaphore[N_OF_PODS];
 
 /*
     Source: http://stackoverflow.com/questions/20462826/hash-function-for-strings-in-c
 */
+
+int init_semaphores() {
+    char name[25];
+    for (int i = 0; i < N_OF_PODS; i++) {
+        sprintf(name, "ecse427-maximneverov-%i", i);
+        keystore_semaphore[i] = sem_open(name, O_CREAT|O_RDWR, S_IRWXU, 1);
+        
+        if (keystore_semaphore[i] == SEM_FAILED) {
+            return -1;
+        }
+    }
+    return 0;
+}
 
 int hash_function(char* key)
 {
@@ -60,9 +75,13 @@ int kv_store_create(char *name) {
     ftruncate(fd, STORE_SIZE);
     close(fd);
     
-    kv_store_created = 1;
-    
     init_store();
+    
+    if (init_semaphores() != 0) {
+        return -1;
+    }
+    
+    kv_store_created = 1;
     
     return 0;
 }
@@ -92,7 +111,6 @@ int kv_store_write(char *key, char *value) {
     char *pod_addr = store_addr + (index * POD_SIZE);
     
     // Find an empty spot in this pod
-    // TODO: Remove oldest if full
     char *mem_loc = pod_addr;
     char empty[] = "";
     while (strcmp(mem_loc, empty) != 0 && (mem_loc - pod_addr)/(KEY_SIZE+VALUE_SIZE) < POD_DEPTH) {
