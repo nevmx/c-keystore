@@ -95,9 +95,26 @@ int kv_store_write(char *key, char *value) {
     // TODO: Remove oldest if full
     char *mem_loc = pod_addr;
     char empty[] = "";
-    while (strcmp(mem_loc, empty) != 0) {
+    while (strcmp(mem_loc, empty) != 0 && (mem_loc - pod_addr)/(KEY_SIZE+VALUE_SIZE) < POD_DEPTH) {
         printf("Found: (%s, %s)\n", mem_loc, mem_loc + KEY_SIZE); 
         mem_loc += (KEY_SIZE + VALUE_SIZE);   
+    }
+    
+    
+    // If the pod if full - we need to remove the oldest element in this pod and replace it with the new element
+    if ((mem_loc - pod_addr)/(KEY_SIZE+VALUE_SIZE) > POD_DEPTH - 1) {
+        // First, move all elements back by one - O(n) run time :(
+        
+        // Return pointer to beginning of pod
+        mem_loc = pod_addr;
+        
+        while ((mem_loc - pod_addr)/(KEY_SIZE+VALUE_SIZE) < POD_DEPTH - 1) {
+            // Move the key and value pair
+            memcpy(mem_loc, mem_loc + (KEY_SIZE+VALUE_SIZE), KEY_SIZE+VALUE_SIZE);
+            mem_loc += KEY_SIZE+VALUE_SIZE;
+        }
+        
+        // After copying all the pairs, insert new one in the last slot
     }
     
     // Write key
@@ -143,9 +160,15 @@ char *kv_store_read(char *key) {
 
 int main(int argc, char** argv) {
     (void)kv_store_create("some_store");
-    (void)kv_store_write("student_id", "260621662");
-    (void)kv_store_write("student_id", "P00P");
-    (void)kv_store_write("student_id", "This is but a test.");
+    (void)kv_store_write("student_id", "260621662 - 1");
+    (void)kv_store_write("student_id", "P00P - 2");
+    (void)kv_store_write("student_id", "This is but a test. - 3");
+    (void)kv_store_write("student_id", "This is but a test. - 4");
+    (void)kv_store_write("student_id", "This is but a test. - 5");
+    (void)kv_store_write("student_id", "This is but a test. - 6");
+    (void)kv_store_write("student_id", "This is but a test. - 7");
+    (void)kv_store_write("student_id", "This is but a test. - 8");
+    (void)kv_store_write("student_id", "This is but a test. - 9");
     (void)kv_store_write("school", "mcgill");
     (void)kv_store_write("name2", "Maxim Neverov");
     
