@@ -35,6 +35,14 @@ int hash_function(char* key)
     return hash % 32;
 }
 
+// This function will empty the store - all keys will be NULL
+void init_store() {
+    char empty[] = "";
+    for (int i = 0; i < 32; i++) {
+        memcpy(store_addr + (i * POD_SIZE), empty, sizeof(empty));  
+    }
+}
+
 int kv_store_create(char *name) {
     int fd = shm_open(name, O_CREAT|O_RDWR, S_IRWXU);
     
@@ -47,6 +55,8 @@ int kv_store_create(char *name) {
     close(fd);
     
     kv_store_created = 1;
+    
+    init_store();
     
     return 0;
 }
@@ -102,6 +112,10 @@ char *kv_store_read(char *key) {
     int index = hash_function(key_s);
     char *pod_addr = store_addr + (index * POD_SIZE);
     
+    if (strcmp(pod_addr, "") == 0) {
+        return NULL;
+    }
+    
     char *value = (void*)calloc(sizeof(char), VALUE_SIZE);
     memcpy(value, pod_addr + KEY_SIZE, VALUE_SIZE);
     return value;
@@ -109,9 +123,9 @@ char *kv_store_read(char *key) {
 
 int main(int argc, char** argv) {
     (void)kv_store_create("some_store");
-    (void)kv_store_write("student_id", "260621662");
-    (void)kv_store_write("school", "mcgill");
-    (void)kv_store_write("name2", "Maxim Neverov");
+    //(void)kv_store_write("student_id", "260621662");
+    //(void)kv_store_write("school", "mcgill");
+    //(void)kv_store_write("name2", "Maxim Neverov");
     
     char* value1 = kv_store_read("student_id");
     char* value2 = kv_store_read("school");
