@@ -96,7 +96,6 @@ int kv_store_write(char *key, char *value) {
     char *mem_loc = pod_addr;
     char empty[] = "";
     while (strcmp(mem_loc, empty) != 0 && (mem_loc - pod_addr)/(KEY_SIZE+VALUE_SIZE) < POD_DEPTH) {
-        printf("Found: (%s, %s)\n", mem_loc, mem_loc + KEY_SIZE); 
         mem_loc += (KEY_SIZE + VALUE_SIZE);   
     }
     
@@ -146,16 +145,65 @@ char *kv_store_read(char *key) {
     char *mem_loc = pod_addr;
     
     char empty[] = "";
-    while (strcmp(mem_loc, key_s) != 0) {
+    while (strcmp(mem_loc, key_s) != 0 && (mem_loc - pod_addr)/(KEY_SIZE+VALUE_SIZE) < POD_DEPTH) {
         if (strcmp(mem_loc, empty) == 0) {
             return NULL;
         }
         mem_loc += (KEY_SIZE + VALUE_SIZE);
     }
     
-    char *value = (void*)calloc(sizeof(char), VALUE_SIZE);
+    char *value = (void*)calloc(VALUE_SIZE, sizeof(char));
     memcpy(value, mem_loc + KEY_SIZE, VALUE_SIZE);
     return value;
+}
+
+char **kv_store_read_all(char *key) {
+    // Ensure that the store has been created
+    if (kv_store_created != 1) {
+        return NULL;
+    }
+    
+    if (!key || strlen(key) < 1) {
+        return NULL;
+    }
+    
+    // Truncate the key to 32 bytes. Last byte must be string terminator.
+    char key_s[KEY_SIZE];
+    strncpy(key_s, key, KEY_SIZE);
+    key_s[KEY_SIZE - 1] = '\0';
+    
+    int index = hash_function(key_s);
+    char *pod_addr = store_addr + (index * POD_SIZE);
+    char *mem_loc = pod_addr;
+    char empty[] = "";
+    
+    char **result = (void*)calloc(POD_DEPTH, sizeof(char *)); // Maximum number of matches is the actual depth of the pod
+    
+    // Scan the pod until you reach an empty key or end of pod
+    int result_index = 0;
+    while (strcmp(mem_loc, empty) != 0 && (mem_loc - pod_addr)/(KEY_SIZE+VALUE_SIZE) < POD_DEPTH) {
+        // If key matches, it needs to be returned
+        if (strcmp(mem_loc, key_s) == 0) {
+        
+            // Allocate memory before copying the value in.
+            result[result_index] = (void*)calloc(VALUE_SIZE, sizeof(char));
+            
+            // Copy the value
+            memcpy(result[result_index], mem_loc + KEY_SIZE, VALUE_SIZE);
+            
+            result_index++;
+        }
+        mem_loc += KEY_SIZE+VALUE_SIZE;
+    }
+    
+    // Resize result so that it's not any bigger than the amount of elements in it
+    result = (void *)realloc(result, (result_index + 1) * sizeof(char *));
+    
+    // This array will be null-terminated so that the user knows the size of it.
+    // There is no other way to know the size.
+    result[result_index + 1] = NULL;
+    
+    return result;
 }
 
 int main(int argc, char** argv) {
@@ -165,22 +213,33 @@ int main(int argc, char** argv) {
     (void)kv_store_write("student_id", "This is but a test. - 3");
     (void)kv_store_write("student_id", "This is but a test. - 4");
     (void)kv_store_write("student_id", "This is but a test. - 5");
-    (void)kv_store_write("student_id", "This is but a test. - 6");
-    (void)kv_store_write("student_id", "This is but a test. - 7");
-    (void)kv_store_write("student_id", "This is but a test. - 8");
-    (void)kv_store_write("student_id", "This is but a test. - 9");
-    (void)kv_store_write("school", "mcgill");
-    (void)kv_store_write("name2", "Maxim Neverov");
+    //(void)kv_store_write("student_id", "This is but a test. - 6");
+    //(void)kv_store_write("student_id", "This is but a test. - 7");
+    //(void)kv_store_write("student_id", "This is but a test. - 8");
+    //(void)kv_store_write("student_id", "This is but a test. - 9");
+    (void)kv_store_write("school", "mcgill1");
+    (void)kv_store_write("school", "mcgill2");
+    (void)kv_store_write("school", "mcgill3");
+    (void)kv_store_write("nam", "Maxim Neverov");
+    (void)kv_store_write("nam", "Maxim NNNNNev");
     
     char* value1 = kv_store_read("student_id");
     char* value2 = kv_store_read("school");
-    char* value3 = kv_store_read("name2");
+    char* value3 = kv_store_read("nam");
+    
+    //char** values = kv_store_read_all("school2");
     
     printf("Value 1: %s\n", value1);
     printf("Value 2: %s\n", value2);
-    printf("Value 3: %s\n", value3);
+    printf("Value 3: %s\n\n", value3);
+    
+    //for (int i = 0; i < 8 && values[i] != NULL; i++) {
+    //    printf("Values: %s\n", values[i]);
+    //}
+    
     free(value1);
     free(value2);
     free(value3);
+    //free(values);
 }
 
