@@ -197,11 +197,12 @@ char **kv_store_read_all(char *key) {
     }
     
     // Resize result so that it's not any bigger than the amount of elements in it
-    result = (void *)realloc(result, (result_index + 1) * sizeof(char *));
+    if (result_index < 8)
+        result = (void *)realloc(result, (result_index + 1) * sizeof(char *));
     
     // This array will be null-terminated so that the user knows the size of it.
     // There is no other way to know the size.
-    result[result_index + 1] = NULL;
+    result[result_index] = NULL;
     
     return result;
 }
@@ -213,33 +214,34 @@ int main(int argc, char** argv) {
     (void)kv_store_write("student_id", "This is but a test. - 3");
     (void)kv_store_write("student_id", "This is but a test. - 4");
     (void)kv_store_write("student_id", "This is but a test. - 5");
-    //(void)kv_store_write("student_id", "This is but a test. - 6");
-    //(void)kv_store_write("student_id", "This is but a test. - 7");
-    //(void)kv_store_write("student_id", "This is but a test. - 8");
-    //(void)kv_store_write("student_id", "This is but a test. - 9");
+    (void)kv_store_write("student_id", "This is but a test. - 6");
+    (void)kv_store_write("student_id", "This is but a test. - 7");
+    (void)kv_store_write("student_id", "This is but a test. - 8");
+    (void)kv_store_write("student_id", "This is but a test. - 9");
+    (void)kv_store_write("student_id", "OMG so full...");
     (void)kv_store_write("school", "mcgill1");
     (void)kv_store_write("school", "mcgill2");
     (void)kv_store_write("school", "mcgill3");
-    (void)kv_store_write("nam", "Maxim Neverov");
-    (void)kv_store_write("nam", "Maxim NNNNNev");
+    (void)kv_store_write("ah", "Maxim Neverov");
+    (void)kv_store_write("ah", "Maxim NNNNNev");
     
     char* value1 = kv_store_read("student_id");
     char* value2 = kv_store_read("school");
-    char* value3 = kv_store_read("nam");
+    char* value3 = kv_store_read("ah");
     
-    //char** values = kv_store_read_all("school2");
+    char** values = kv_store_read_all("student_id");
     
     printf("Value 1: %s\n", value1);
     printf("Value 2: %s\n", value2);
     printf("Value 3: %s\n\n", value3);
     
-    //for (int i = 0; i < 8 && values[i] != NULL; i++) {
-    //    printf("Values: %s\n", values[i]);
-    //}
+    for (int i = 0; i < 8 && values[i] != NULL; i++) {
+        printf("Values: %s\n", values[i]);
+    }
     
     free(value1);
     free(value2);
     free(value3);
-    //free(values);
+    free(values);
 }
 
