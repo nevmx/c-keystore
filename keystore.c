@@ -110,6 +110,11 @@ int kv_store_write(char *key, char *value) {
     int index = hash_function(key_s);
     char *pod_addr = store_addr + (index * POD_SIZE);
     
+    // Wait here before continuing, as we will be comparing strings
+    if (sem_wait(keystore_semaphore[index]) != 0) {
+        return -1;
+    }
+    
     // Find an empty spot in this pod
     char *mem_loc = pod_addr;
     char empty[] = "";
@@ -139,6 +144,11 @@ int kv_store_write(char *key, char *value) {
     
     // Write value
     memcpy(mem_loc + KEY_SIZE, value_s, VALUE_SIZE);
+    
+    // Release the lock
+    if (sem_post(keystore_semaphore[index]) != 0) {
+        return -1;
+    }
     
     return 0;
 }
