@@ -7,16 +7,20 @@
 #include <stdlib.h>
 
 /*
-    32 pods.
+    256 pods. each pod 8 units deep
     1 key: 32 bytes, 1 value: 256 bytes.
+    1 KVP = 288 bytes.
+    1 pod = 288 bytes * 8 units = 2,304 bytes
+    256 pods = 2,304 * 256 = 589,824
     
-    32*(32+256) = 9,216 bytes
 */
 
-#define STORE_SIZE 9216
+#define STORE_SIZE 589824
 #define KEY_SIZE 32
 #define VALUE_SIZE 256
-#define POD_SIZE 288
+#define POD_SIZE 2304
+#define N_OF_PODS 256
+#define POD_DEPTH 8
 
 char *store_addr = NULL;
 int kv_store_created = 0;
@@ -32,7 +36,7 @@ int hash_function(char* key)
     {
         hash = 31*hash + key[i];
     }
-    return hash % 32;
+    return hash % N_OF_PODS;
 }
 
 // This function will empty the store - all keys will be NULL
@@ -56,7 +60,7 @@ int kv_store_create(char *name) {
     
     kv_store_created = 1;
     
-    init_store();
+    //init_store();
     
     return 0;
 }
@@ -81,15 +85,21 @@ int kv_store_write(char *key, char *value) {
     strncpy(value_s, value, VALUE_SIZE);
     value_s[VALUE_SIZE - 1] = '\0';
     
-
+    // Find the index, and address of the pod
     int index = hash_function(key_s);
     char *pod_addr = store_addr + (index * POD_SIZE);
     
+    // Find an empty spot in this pod
+    // TODO: Remove oldest if full
+    char *mem_loc = pod_addr;
+    char empty[] = "";
+    while (strcmp(mem_loc, empty) != 0) mem_loc++;
+    
     // Write key
-    memcpy(pod_addr, key_s, KEY_SIZE);
+    memcpy(mem_loc, key_s, KEY_SIZE);
     
     // Write value
-    memcpy(pod_addr + KEY_SIZE, value_s, VALUE_SIZE);
+    memcpy(mem_loc + KEY_SIZE, value_s, VALUE_SIZE);
     
     return 0;
 }
@@ -111,21 +121,26 @@ char *kv_store_read(char *key) {
     
     int index = hash_function(key_s);
     char *pod_addr = store_addr + (index * POD_SIZE);
+    char *mem_loc = pod_addr;
     
-    if (strcmp(pod_addr, "") == 0) {
-        return NULL;
+    char empty[] = "";
+    while (strcmp(mem_loc, key_s) != 0) {
+        if (strcmp(mem_loc, empty) == 0) {
+            return NULL;
+        }
+        mem_loc++;
     }
     
     char *value = (void*)calloc(sizeof(char), VALUE_SIZE);
-    memcpy(value, pod_addr + KEY_SIZE, VALUE_SIZE);
+    memcpy(value, mem_loc + KEY_SIZE, VALUE_SIZE);
     return value;
 }
 
 int main(int argc, char** argv) {
     (void)kv_store_create("some_store");
-    //(void)kv_store_write("student_id", "260621662");
-    //(void)kv_store_write("school", "mcgill");
-    //(void)kv_store_write("name2", "Maxim Neverov");
+    (void)kv_store_write("student_id", "260621662");
+    (void)kv_store_write("school", "mcgill");
+    (void)kv_store_write("name2", "Maxim Neverov");
     
     char* value1 = kv_store_read("student_id");
     char* value2 = kv_store_read("school");
