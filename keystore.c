@@ -42,8 +42,10 @@ int hash_function(char* key)
 // This function will empty the store - all keys will be NULL
 void init_store() {
     char empty[] = "";
-    for (int i = 0; i < 32; i++) {
-        memcpy(store_addr + (i * POD_SIZE), empty, sizeof(empty));  
+    for (int i = 0; i < N_OF_PODS; i++) {
+        for (int j = 0; j < POD_DEPTH; j++) {
+            memcpy(store_addr + (i * POD_SIZE) + (j * (KEY_SIZE + VALUE_SIZE)), empty, sizeof(empty));
+        }
     }
 }
 
@@ -60,7 +62,7 @@ int kv_store_create(char *name) {
     
     kv_store_created = 1;
     
-    //init_store();
+    init_store();
     
     return 0;
 }
@@ -93,7 +95,10 @@ int kv_store_write(char *key, char *value) {
     // TODO: Remove oldest if full
     char *mem_loc = pod_addr;
     char empty[] = "";
-    while (strcmp(mem_loc, empty) != 0) mem_loc++;
+    while (strcmp(mem_loc, empty) != 0) {
+        printf("Found: (%s, %s)\n", mem_loc, mem_loc + KEY_SIZE); 
+        mem_loc += (KEY_SIZE + VALUE_SIZE);   
+    }
     
     // Write key
     memcpy(mem_loc, key_s, KEY_SIZE);
@@ -128,7 +133,7 @@ char *kv_store_read(char *key) {
         if (strcmp(mem_loc, empty) == 0) {
             return NULL;
         }
-        mem_loc++;
+        mem_loc += (KEY_SIZE + VALUE_SIZE);
     }
     
     char *value = (void*)calloc(sizeof(char), VALUE_SIZE);
@@ -139,6 +144,8 @@ char *kv_store_read(char *key) {
 int main(int argc, char** argv) {
     (void)kv_store_create("some_store");
     (void)kv_store_write("student_id", "260621662");
+    (void)kv_store_write("student_id", "P00P");
+    (void)kv_store_write("student_id", "This is but a test.");
     (void)kv_store_write("school", "mcgill");
     (void)kv_store_write("name2", "Maxim Neverov");
     
