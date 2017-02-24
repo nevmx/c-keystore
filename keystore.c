@@ -62,9 +62,14 @@ int kv_store_write(char *key, char *value) {
     }
     
     // Truncate the key to 32 bytes. Last byte must be string terminator.
-    char key_s[32];
-    strncpy(key_s, key, 32);
-    key_s[31] = '\0';
+    char key_s[KEY_SIZE];
+    strncpy(key_s, key, KEY_SIZE);
+    key_s[KEY_SIZE - 1] = '\0';
+    
+    // Truncate the key to 32 bytes. Last byte must be string terminator.
+    char value_s[VALUE_SIZE];
+    strncpy(value_s, value, VALUE_SIZE);
+    value_s[VALUE_SIZE - 1] = '\0';
     
 
     int index = hash_function(key_s);
@@ -74,7 +79,7 @@ int kv_store_write(char *key, char *value) {
     memcpy(pod_addr, key_s, KEY_SIZE);
     
     // Write value
-    memcpy(pod_addr + KEY_SIZE, value, VALUE_SIZE);
+    memcpy(pod_addr + KEY_SIZE, value_s, VALUE_SIZE);
     
     return 0;
 }
@@ -90,9 +95,9 @@ char *kv_store_read(char *key) {
     }
     
     // Truncate the key to 32 bytes. Last byte must be string terminator.
-    char key_s[32];
-    strncpy(key_s, key, 32);
-    key_s[31] = '\0';
+    char key_s[KEY_SIZE];
+    strncpy(key_s, key, KEY_SIZE);
+    key_s[KEY_SIZE - 1] = '\0';
     
     int index = hash_function(key_s);
     char *pod_addr = store_addr + (index * POD_SIZE);
@@ -104,7 +109,7 @@ char *kv_store_read(char *key) {
 
 int main(int argc, char** argv) {
     int result1 = kv_store_create("some_store");
-    (void)kv_store_write("0123456789012345678901234567890123456789", "greater_than_32");
+    (void)kv_store_write("0123456789012345678901234567890123456789", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
     //(void)kv_store_write("01234567890123456789012345678901", "exactly_32");
     (void)kv_store_write("sad9", "less_than_32");
     
