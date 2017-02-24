@@ -61,8 +61,8 @@ int kv_store_write(char *key, char *value) {
         return -1;
     }
     
+    // Truncate the key to 32 bytes. Last byte must be string terminator.
     char key_s[32];
-    
     strncpy(key_s, key, 32);
     key_s[31] = '\0';
     
@@ -89,8 +89,8 @@ char *kv_store_read(char *key) {
         return NULL;
     }
     
+    // Truncate the key to 32 bytes. Last byte must be string terminator.
     char key_s[32];
-    
     strncpy(key_s, key, 32);
     key_s[31] = '\0';
     
@@ -104,19 +104,19 @@ char *kv_store_read(char *key) {
 
 int main(int argc, char** argv) {
     int result1 = kv_store_create("some_store");
-    //(void)kv_store_write("0123456789012345678901234567890123456789", "greater_than_32");
-    (void)kv_store_write("01234567890123456789012345678901", "exactly_32");
+    (void)kv_store_write("0123456789012345678901234567890123456789", "greater_than_32");
+    //(void)kv_store_write("01234567890123456789012345678901", "exactly_32");
     (void)kv_store_write("sad9", "less_than_32");
     
-    //char* value1 = kv_store_read("0123456789012345678901234567890123456789");
-    char* value2 = kv_store_read("01234567890123456789012345678901");
+    char* value1 = kv_store_read("0123456789012345678901234567890123456789");
+    //char* value2 = kv_store_read("01234567890123456789012345678901");
     char* value3 = kv_store_read("sad9");
     
-    //printf("Value 1: %s\n", value1);
-    printf("Value 2: %s\n", value2);
+    printf("Value 1: %s\n", value1);
+    //printf("Value 2: %s\n", value2);
     printf("Value 3: %s\n", value3);
-    //free(value1);
-    free(value2);
+    free(value1);
+    //free(value2);
     free(value3);
 }
 
