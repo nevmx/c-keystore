@@ -52,9 +52,15 @@ int kv_store_create(char *name) {
 }
 
 int kv_store_write(char *key, char *value) {
+    // Ensure that the store has been created
     if (kv_store_created != 1) {
         return -1;
     }
+    
+    if (!key || !value || strlen(key) < 1 || strlen(value) < 1) {
+        return -1;
+    }
+    
 
     int index = hash_function(key);
     char *pod_addr = store_addr + (index * POD_SIZE);
@@ -69,7 +75,12 @@ int kv_store_write(char *key, char *value) {
 }
 
 char *kv_store_read(char *key) {
+    // Ensure that the store has been created
     if (kv_store_created != 1) {
+        return NULL;
+    }
+    
+    if (!key || strlen(key) < 1) {
         return NULL;
     }
     
@@ -83,11 +94,19 @@ char *kv_store_read(char *key) {
 
 int main(int argc, char** argv) {
     int result1 = kv_store_create("some_store");
-    int result = kv_store_write("key", "value_hehehehe");
+    //(void)kv_store_write("0123456789012345678901234567890123456789", "greater_than_32");
+    (void)kv_store_write("01234567890123456789012345678901", "exactly_32");
+    (void)kv_store_write("sad9", "less_than_32");
     
-    char* value = kv_store_read("key");
+    //char* value1 = kv_store_read("0123456789012345678901234567890123456789");
+    char* value2 = kv_store_read("01234567890123456789012345678901");
+    char* value3 = kv_store_read("sad9");
     
-    printf("Value: %s\n", value);
-    free(value);
+    //printf("Value 1: %s\n", value1);
+    printf("Value 2: %s\n", value2);
+    printf("Value 3: %s\n", value3);
+    //free(value1);
+    free(value2);
+    free(value3);
 }
 
